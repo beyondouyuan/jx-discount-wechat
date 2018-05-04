@@ -2,7 +2,7 @@
 * @Author: beyondouyuan
 * @Date:   2018-03-18 01:47:48
 * @Last Modified by:   beyondouyuan
-* @Last Modified time: 2018-05-02 13:17:17
+* @Last Modified time: 2018-05-03 20:09:45
 * actions.js 即对数据进行各种操作，即通过commit给mutaions实现
 */
 
@@ -22,6 +22,7 @@ import { requestLogin } from '@/api'
 export const LoginAction = ({commit}, accountData) => {
     return new Promise((resolve, reject) => {
         requestLogin(accountData).then(res => {
+            console.log(res)
             const { token } = res.data
             commit(types.SET_TOKEN, token)
             setToken(token)

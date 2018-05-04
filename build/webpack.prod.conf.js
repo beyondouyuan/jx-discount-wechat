@@ -11,7 +11,8 @@ const ExtractTextPlugin = require('extract-text-webpack-plugin')
 const OptimizeCSSPlugin = require('optimize-css-assets-webpack-plugin')
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin')
 
-const env = require('../config/prod.env')
+// const env = require('../config/prod.env')
+var env = config.build[process.env.env_config+'Env'] // 在/config中分别配置releaseEnv和prodEnv对应引入release.env和prod.env以此得到不同环境打包得到baseURL路径
 
 const webpackConfig = merge(baseWebpackConfig, {
   module: {

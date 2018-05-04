@@ -2,7 +2,7 @@
 * @Author: beyondouyuan
 * @Date:   2018-04-26 12:50:07
 * @Last Modified by:   beyondouyuan
-* @Last Modified time: 2018-05-02 17:45:35
+* @Last Modified time: 2018-05-04 09:45:56
 */
 import qs from 'qs'
 import request from '@/utils/request'
@@ -17,7 +17,7 @@ import '@/mock'
  */
 export const requestCodeMsg = () => {
     return request({
-            url: parseAPI('codemsg'),
+            url: `http://test.qr.joyxuan.com${parseAPI('codemsg')}`,
             method: 'get'
         })
         .then(res => res.data)
@@ -31,9 +31,8 @@ export const requestCodeMsg = () => {
  */
 export const requestPaymentCode = params => {
     return request({
-            url: parseAPI('paymentCode'),
-            method: 'get',
-            params
+            url: `http://test.qr.joyxuan.com${parseAPI('paymentCode')}/${params.paymentCode}`,
+            method: 'get'
         })
         .then(res => res.data)
 }
@@ -44,9 +43,9 @@ export const requestPaymentCode = params => {
  * @param      {<type>}  data    The data
  * @return     {<type>}  { description_of_the_return_value }
  */
-export const requestPmuOrderNo = data => {
+export const requestCpay = data => {
     return request({
-            url: parseAPI('pmuOrderNo'),
+            url: `http://test.qr.joyxuan.com${parseAPI('cpay')}`,
             method: 'post',
             data: qs.stringify({
                 ...data
@@ -63,11 +62,9 @@ export const requestPmuOrderNo = data => {
  */
 export const requestRecharge = data => {
     return request({
-            url: parseAPI('recharge'),
+            url: `http://test.qr.joyxuan.com${parseAPI('recharge')}`,
             method: 'post',
-            data: qs.stringify({
-                ...data
-            })
+            data
         })
         .then(res => res.data)
 }
@@ -126,7 +123,7 @@ export const requestWXIndex = params => {
  */
 export const requestLogin = params => {
     return request({
-            url: parseAPI('wxlogin'),
+            url: `http://test.qr.joyxuan.com${parseAPI('wxlogin')}`,
             method: 'get',
             params
         })
@@ -139,13 +136,11 @@ export const requestLogin = params => {
  * @param      {<type>}  data    The data
  * @return     {<type>}  { description_of_the_return_value }
  */
-export const requestSmsCode = data => {
+export const requestSmsCode = params => {
     return request({
-            url: parseAPI('wxsendSmsCode'),
-            method: 'post',
-            data: qs.stringify({
-                ...data
-            })
+            url: `http://test.qr.joyxuan.com${parseAPI('wxsendSmsCode')}`,
+            method: 'get',
+            params
         })
         .then(res => res.data)
 }
@@ -175,9 +170,10 @@ export const requestSetPayPassword = data => {
  */
 export const requestWechatLogin = params => {
     return request({
+            // url: `http://192.168.1.23:9018${parseAPI('wechatAppLogin')}`,
             url: parseAPI('wechatAppLogin'),
-            method: 'GET',
-            params
+            method: 'get',
+            params: qs.stringify({params})
         })
         .then(res => res.data)
 }

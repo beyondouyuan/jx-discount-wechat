@@ -5,17 +5,18 @@ import Pay from '@/views/Pay'
 import Order from '@/views/Order'
 import Login from '@/views/Login'
 import User from '@/views/User'
+import Result from '@/views/Result'
 
 Vue.use(Router)
 
 export default new Router({
-    mode: 'hash',
+    mode: 'history',
     routes: [{
         path: '/',
         name: 'Home',
         component: Home
     }, {
-        path: '/login',
+        path: '/login/:openid',
         name: 'Login',
         component: Login
     }, {
@@ -30,5 +31,9 @@ export default new Router({
         path: '/user/:mobile',
         name: 'User',
         component: User
+    }, {
+        path: '/result/:state',
+        name: 'Result',
+        component: Result
     }]
 })

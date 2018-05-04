@@ -28,7 +28,7 @@
                         :key="index"
                         class="amount"
                         :class="{active: index == selectedIndex}"
-                        @click="handleSelectAmount(index, item.value)"
+                        @click="handleSelectAmount(index, item.id)"
                         >
                         <div class="amount-value" :ref="'AMOUNT' + index">{{item.payAmount}}</div>
                         <div class="amount-tips">{{item.gatheringText}}</div>
@@ -82,28 +82,17 @@
 </template>
 <script>
     import { requestWXIndex, requestRecharge, fetchRecharge } from '@/api'
-    import { WeiXinLogin } from '@/utils/tool'
+    import { WeiXinLogin, getQueryString } from '@/utils/tool'
+    import { Indicator, Toast } from 'mint-ui'
+    import wx from 'weixin-js-sdk'
+    import {
+        setToken,
+        getToken,
+        getOpenId
+    } from '@/utils/auth'
+
     import waves from "@/directive/waves"
     const requestCode = '0000'
-    const amountList =[{
-        value: 100,
-        tips: '抵110元使用'
-    }, {
-        value: 200,
-        tips: '抵225元使用'
-    }, {
-        value: 500,
-        tips: '抵580元使用'
-    }, {
-        value: 1000,
-        tips: '抵1200元使用'
-    }, {
-        value: 2000,
-        tips: '抵2500元使用'
-    }, {
-        value: 5000,
-        tips: '抵6000元使用'
-    }]
     export default {
         name: 'Home',
         directives: {
@@ -113,14 +102,19 @@
             return {
                 data: '',
                 loading: true,
-                amountList,
                 selectedIndex: 0,
-                rechargeValue: 100
+                rechargeConfig: 1
             }
         },
         created() {
-            this.fetchMyIndex()
-            WeiXinLogin()
+            if (WeiXinLogin() && !getToken()) {
+                const openid = WeiXinLogin()
+                this.$router.push({name: 'Login', params: {openid: openid}})
+            } else {
+                if (getToken()) {
+                    this.fetchMyIndex()
+                }
+            }
         },
         filters: {
             selectDocument(arr) {
@@ -130,13 +124,117 @@
                 // console.log(arr)
             }
         },
+        mounted() {
+            this.wxConfig()
+            // this.fetchMyIndex()
+        },
         methods: {
-            handleSelectAmount(index, value) {
+            wxConfig(option) {
+                let setting = {
+                    debug:false,
+                    jsApiList: ['chooseWXPay', 'getBrandWCPayRequest']
+                }
+                const config = {
+                    ...setting,
+                    ...option
+                }
+                wx.ready(()=>{
+                  console.log('wx.ready');
+                });
+            },
+            handleSelectAmount(index, rechargeConfigId) {
                 this.selectedIndex = index
-                this.rechargeValue = value
+                this.rechargeConfig = rechargeConfigId
+                console.log(this.rechargeConfig)
             },
             handleTransfer() {
-                console.log(this.rechargeValue)
+                Indicator.open()
+                const condition = {
+                    // openid: getOpenId(),
+                    openId: getOpenId(),
+                    rechargeConfigId: this.rechargeConfig
+                }
+                requestRecharge(condition).then(res => {
+                    // console.log(res.data.prepay_id)
+                    if (res.code == requestCode) {
+                        Toast({
+                          message: '下单成功',
+                          duration: 2000
+                        })
+                        Indicator.close();
+                        const { data } = res
+                        const config = {
+                            appId: data.appId,
+                            timeStamp: data.timeStamp, 
+                            nonceStr: data.nonceStr, 
+                            package:  'prepay_id=' + data.prepay_id, 
+                            signType: data.signType, 
+                            paySign: data.paySign, 
+                        }
+                        this.onBridgeReady(config)
+                        // wx.chooseWXPay({
+                        //     ...config,
+                        //     // appId: data.appId,
+                        //     // timestamp: data.timeStamp, // 支付签名时间戳，注意微信jssdk中的所有使用timestamp字段均为小写。但最新版的支付后台生成签名使用的timeStamp字段名需大写其中的S字符
+                        //     // nonceStr: data.nonceStr, // 支付签名随机串，不长于 32 位
+                        //     // package:  'prepay_id=' + data.prepay_id, // 统一支付接口返回的prepay_id参数值，提交格式如：prepay_id=\*\*\*）
+                        //     // signType: data.signType, // 签名方式，默认为'SHA1'，使用新版支付需传入'MD5'
+                        //     // paySign: data.paySign, // 支付签名
+                        //     success: function (res) {
+                        //         alert(res)
+                        //     // 支付成功后的回调函数
+                        //     },
+                        //     fail: function(e) {
+                        //         alert(e)
+                        //         console.log(e)
+                        //     }
+                        // });
+                    } else {
+                        Toast({
+                          message: '下单失败',
+                          duration: 2000
+                        })
+                        Indicator.close();
+                    }
+                })
+                // console.log(this.rechargeConfig)
+            },
+            onBridgeReady(config) {
+                const self = this
+                WeixinJSBridge.invoke(
+                'getBrandWCPayRequest', config,
+                function(res) {
+                    // console.log(res)
+                    if (res.err_msg == "get_brand_wcpay_request:ok") {
+                        alert('ok')
+                        Toast({
+                          message: '支付成功',
+                          duration: 2000
+                        })
+                        const state = {
+                            status: 'success',
+                            merchant: '链动支付',
+                            amount: '100'
+                        }
+                        setTimeout(() => {
+                            self.$router.push({name: 'Result', params: {state: state}})
+                        }, 1500)
+                    } else {
+                        alert('fail')
+                        Toast({
+                          message: '支付失败',
+                          duration: 2000
+                        })
+                        const state = {
+                            status: 'fail',
+                        }
+                        setTimeout(() => {
+                            self.$router.push({name: 'Result', params: {state: state}})
+                        }, 1500)
+                        // alert(res.err_msg)
+                    }
+                }
+            );
             },
             handleShowQRCode() {
                 this.$router.push({name: 'Pay', params: {id: 1234}})
@@ -159,6 +257,9 @@
                                 this.loading = false
                             }, 1000)
                         }
+                    } else if (res.code == '1001') {
+                        const openid = WeiXinLogin()
+                        this.$router.push({name: 'Login', params: {openid: openid}})
                     }
                 })
             }

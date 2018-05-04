@@ -1,16 +1,23 @@
 /*
-* @Author: beyondouyuan
-* @Date:   2018-04-28 09:48:13
-* @Last Modified by:   beyondouyuan
-* @Last Modified time: 2018-05-02 18:34:52
-*/
+ * @Author: beyondouyuan
+ * @Date:   2018-04-28 09:48:13
+ * @Last Modified by:   beyondouyuan
+ * @Last Modified time: 2018-05-03 21:39:39
+ */
 
 import {
     setToken,
     getToken
 } from '@/utils/auth'
+import {
+    MessageBox,
+    Toast,
+    Indicator
+} from "mint-ui"
 
-import { requestWechatLogin } from '@/api'
+import {
+    requestWechatLogin
+} from '@/api'
 
 export const isWeiXin = () => {
     const ua = window.navigator.userAgent.toLowerCase()
@@ -18,44 +25,70 @@ export const isWeiXin = () => {
 }
 
 export const getQueryString = key => {
-  const reg = new RegExp("(^|&)"+key+"=([^&]*)(&|$)")
-  const result = window.location.search.substr(1).match(reg)
-  return result ? decodeURIComponent(result[2]) : null
+    const reg = new RegExp("(^|&)" + key + "=([^&]*)(&|$)")
+    const result = window.location.search.substr(1).match(reg)
+    return result ? decodeURIComponent(result[2]) : null
 }
 
+// export const WeiXinLogin = () => {
+//     if (isWeiXin()) {
+//         // const page = location.href
+//         const page = location.hostname
+//         console.log(page)
+//         const condition = {
+//             page
+//         }
+//         if (!getToken()) { // 若未授权
+//             requestWechatLogin(condition).then(res => {
+//                 location.href = res
+//                 return ''
+//             }).catch(e => {
+//                 Toast("网络错误,请重试")
+//             })
+//         } else { // 若已绑定
+//             let localCode
+//             if (JSON.parse(getQueryString("s")).appid) {
+//                 localCode = JSON.parse(getQueryString("s")).appid
+//                 setToken(localCode)
+//             } else { // 如果未绑定 用本地code
+//                 localCode = JSON.parse(getQueryString("s")).code
+//                 setToken(localCode)
+//                 location.href = `http://${location.host}/html/#/login`
+//             }
+//         }
+
+//     }
+// }
+
+
+
 export const WeiXinLogin = () => {
-    // if (isWeiXin()) {
-        console.log(isWeiXin())
+    if (isWeiXin()) {
         const page = location.href
         const condition = {
-            page 
+            page
         }
-        let localCode;
-        requestWechatLogin(condition).then(res => {
-            debugger;
-            console.log(res)
-                // localCode = JSON.parse(getQueryString("s")).token
-                // setToken(localCode)
-                // location.href = res
-            })
-        // 未授权
-        // if (!getToken()) {
-        //     requestWechatLogin(condition).then(res => {
-        //         localCode = JSON.parse(getQueryString("s")).token
-        //         setToken(localCode)
-        //         location.href = res
-        //     })
-        // } else {
-        //     // 若已绑定账号，获取url上的token并存储在本地
-        //     if (JSON.parse(getQueryString("s")).token) {
-        //         localCode = JSON.parse(getQueryString("s")).token
-        //         setToken(localCode)
-        //     } else {
-        //         // 若未绑定 用本地code
-        //         localCode = JSON.parse(getQueryString("s")).code
-        //         location.href = `http://${location.host}/#/login?accessToken=${localCode}`
-        //         setToken(localCode)
-        //     }
-        // }
-    // }
+        if (getQueryString("s") == null) { // 若未授权
+            // requestWechatLogin(condition).then(res => {
+            //     location.href = res
+            //     return ''
+            // }).catch(e => {
+            //     Toast("网络错误,请重试")
+            // })
+            location.href = `${page}?s={"code":"001K2jn21501FN1oNUo21eJ8n21K2jn6","openid":"oofNP0rLXPAuSwxQtoSjgzbxv3-s"}`
+            // console.log(getQueryString("s"))
+            return ''
+        } else { // 若已绑定
+            let localCode;
+            console.log('openid '+JSON.parse(getQueryString("s")).openid)
+            if (JSON.parse(getQueryString("s")).openid) {
+                localCode = JSON.parse(getQueryString("s")).openid
+                return localCode
+            } else { // 如果未绑定 用本地code
+                localCode = JSON.parse(getQueryString("s")).code
+                location.href = `http://${location.host}/login`
+            }
+        }
+
+    }
 }

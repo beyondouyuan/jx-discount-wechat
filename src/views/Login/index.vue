@@ -73,6 +73,9 @@
 <script>
     import { mapActions } from 'vuex'
     import { requestLogin, requestSmsCode } from '@/api'
+    import {
+        setOpenId
+    } from '@/utils/auth'
     import { RegUtils } from '@/utils/regexp'
     import { Toast, Indicator } from 'mint-ui'
     import waves from "@/directive/waves"
@@ -180,7 +183,7 @@
                     mobile,
                     loginSource : 'qr',
                     verifyCode,
-                    openid : 'oxBTcvqv6EDiQY7x3kvjA1b_Fv1A'
+                    openid: this.$route.params.openid
                 }
                 Indicator.open({
                     text: '正在登录...',
@@ -190,6 +193,7 @@
                 this.LoginAction(condition).then(res => {
                     console.log(res)
                     if (res.code == requestCode) {
+                        setOpenId(this.$route.params.openid)
                         setTimeout(() => {
                             Indicator.close()
                         }, 600)

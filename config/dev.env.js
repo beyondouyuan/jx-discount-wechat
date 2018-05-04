@@ -5,5 +5,5 @@ const prodEnv = require('./prod.env')
 module.exports = {
     NODE_ENV: '"development"',
     ENV_CONFIG: '"dev"',
-    BASE_API: '"192.168.1.23:9018"',
+    BASE_API: '"http://test.qr.joyxuan.com"',
 }

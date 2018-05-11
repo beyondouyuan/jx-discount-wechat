@@ -5,7 +5,7 @@
             <div class="user-box">
                 <div class="user-main">
                     <div class="label-item">
-                        <input type="text" placeholder="请输入手机号" :value="$route.params.mobile | mdMobile" />
+                        <input type="text" placeholder="请输入手机号" :readonly="readonly" :value="$route.params.mobile | mdMobile" />
                     </div>
                     <div class="label-item auth-item">
                         <input type="text" v-model="verifyCode" placeholder="短信验证码"  />
@@ -14,7 +14,7 @@
                         </span>
                     </div>
                     <div class="label-item auth-item">
-                        <input type="text" v-model="payPassword" placeholder="新的支付密码"  />
+                        <input type="password" maxlength="6" v-model="payPassword"  placeholder="新的六位数支付密码"  />
                     </div>
                     </div>
             </div>
@@ -31,6 +31,7 @@
     import { Toast, Indicator } from 'mint-ui'
     import { RegUtils } from '@/utils/regexp'
     import waves from "@/directive/waves"
+    import md5 from 'js-md5'
     const requestCode = '0000'
     export default {
         name: 'User',
@@ -39,38 +40,43 @@
         },
         data() {
             return {
+                readonly: true,
                 authText: '获取验证码',
                 payPassword: '',
-                loading: false,
+                loading: true,
                 verifyCode: '',
                 checkPass: false,
                 checkValidate: false,
-                smsCode: false,
+                smsCode: true,
                 isLogining: false // 防止重复提交
             }
         },
+        created() {
+            setTimeout(() => {
+                this.loading = false
+            }, 1000)
+        },
         watch: { // 监控以实现实时验证
             payPassword: function(newMobile, oldMobile) {
-                if (!RegUtils.isPhone(newMobile)) {
+                if (!RegUtils.isNumber(newMobile)) {
                     this.checkPass = false
                 } else {
                     this.checkPass = true
                     this.checkValidate = true
-                    this.smsCode = true
                 }
             },
             verifyCode: function(newVal, oldVal) {
                 if (!RegUtils.isNumber(newVal)) {
-                    this.smsCode = false
+                    // this.smsCode = false
                 } else {
-                    this.smsCode = true
+                    // this.smsCode = true
                 }
             }
         },
         filters: {
             mdMobile(mobile) {
-                const start = mobile.slice(0, 4)
-                const end = mobile.slice(-2)
+                const start = (mobile+"").slice(0, 4)
+                const end = (mobile+"").slice(-2)
                 return `${start}******${end}`
             }
         },
@@ -98,47 +104,54 @@
                     if (res.code == requestCode) {
                         Toast({
                           message: '获取成功',
-                          duration: 2000
+                          duration: 1000
                         })
                         this.countDown(60)
                     } else {
                         Toast({
-                          message: '获取失败',
-                          duration: 2000
+                          message: res.msg,
+                          duration: 1000
                         })
                         this.smsCode = true
                     }
                 })
             },
             handleSubmitSetPass() {
-                this.loading = true // loading
                 this.checkValidate = false // 防止重复提交
                 const startTime = Date.now() // 请求开始
                 const condition = {
                     mobile: this.$route.params.mobile,
                     validateCode: this.verifyCode,
-                    payPassword: this.payPassword
+                    payPassword: md5.hex(this.payPassword).toUpperCase()
                 }
                 requestSetPayPassword(condition).then(res => {
                     const endTime = Date.now()
                     if (res.code == requestCode) {
                         Toast({
                           message: '修改成功',
-                          duration: 2000
+                          duration: 1000
                         })
-                        if (endTime - startTime >= 1000) {
-                            this.checkValidate = true
-                            this.loading = false
-                        } else {
+                        const requestTime = endTime - startTime
+                        if (requestTime <= 300) {
                             setTimeout(() => {
                                 this.checkValidate = true
                                 this.loading = false
                                 this.$router.push({name: 'Home'})
-                            }, 2500)
+                            }, 300 - requestTime)
+                            
+                        } else {
+                            this.checkValidate = true
+                            this.loading = false
+                            this.$router.push({name: 'Home'})
                         }
                     } else {
-                        this.loading = false
-                        this.checkValidate = true
+                        setTimeout(() => {
+                            this.checkValidate = true
+                        }, 2000) // 防止重复提交
+                        Toast({
+                          message: res.msg,
+                          duration: 1000
+                        })
                     }
                 })
             }

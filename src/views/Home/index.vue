@@ -1,18 +1,21 @@
 <template>
     <div class="home-container">
         <Loading v-show="loading" />
-        <section class="banner-top">
+        <section class="banner-header">
             <img :src="data.documentList | selectDocument" alt="banner">
         </section>
         <section class="home-wrapper">
             <div class="info-box">
                 <div class="user-info">
                     <div class="avatar" @click="handleShowAccount">
-                        <img :src="data.portraitPic" alt="头像">
+                        <img src="../../assets/images/touxiang@2x.png" alt="头像">
                     </div>
                     <div class="info">
                         <p class="amount">{{data.balance}}</p>
-                        <p class="info-type">个人账户</p>
+                        <p class="info-type">个人资产</p>
+                    </div>
+                    <div class="arrow">
+                            <img src="../../assets/images/_@2x.png" alt="箭头">
                     </div>
                 </div>
                 <div class="qrcode-info" @click="handleShowQRCode">
@@ -21,13 +24,13 @@
                 </div>
             </div>
             <div class="amount-box">
-                <p class="adv">选择转入金额</p>
+                <p class="adv">选择转入金额<img src="../../assets/images/icon_rule@2x.png" alt="图标" @click="toFavouredPolicy()"></p>
                 <div class="amount-list">
                     <div
                         v-for="(item, index) of data.rechargeList"
                         :key="index"
                         class="amount"
-                        :class="{active: index == selectedIndex}"
+                        :class="{active: index == selectedIndex, disabled: index > 2}"
                         @click="handleSelectAmount(index, item.id)"
                         >
                         <div class="amount-value" :ref="'AMOUNT' + index">{{item.payAmount}}</div>
@@ -47,20 +50,20 @@
             <div class="banner-bottom">
                 <div class="conversation-box">
                     <div class="conversation clearfix dialog-left dialog-3">
-                        <img :src="data.portraitPic" alt="头像">
+                        <img src="../../assets/images/tx_icon3@2x.png" alt="头像">
                         <p class="txt">链鱼多余的资产只能在这里使用吗？</p>
                     </div>
                     <div class="conversation clearfix dialog-right dialog-4">
-                        <img :src="data.portraitPic" alt="头像">
+                        <img src="../../assets/images/tx_icon4@2x.png" alt="头像">
                         <p class="txt">不不不，你还可以去享选商城使用哦。</p>
                     </div>
                 </div>
                 <div class="link-box">
-                    <span class="more">享选商城 更多优惠</span>
+                    <span class="more" @click="toAppStore()">享选商城 更多优惠</span>
                     <span class="circle">&gt;</span>
                 </div>
                 <div class="banner-box">
-                    <img :src="data.documentList | selectDocument" alt="banner">
+                    <img src="../../assets/images/bg01@2x.png" alt="banner">
                 </div>
             </div>
         </section>
@@ -68,11 +71,11 @@
             <div class="bottom-btn">
                 <button type="button" class="btn">
                     <img src="../../assets/images/wddd_icon@2x.png">
-                    <span><router-link :to="{ name: 'Order', params: { id: 123 }}">我的订单</router-link></span>
+                    <span><router-link :to="{ name: 'Order' }">我的订单</router-link></span>
                 </button>
             </div>
             <div class="bottom-btn">
-                <button type="button" class="btn">
+                <button type="button" class="btn" @click="showTransRulePopup">
                     <img src="../../assets/images/zhgz_icon@2x.png">
                     <span>转换规则</span>
                 </button>
@@ -81,9 +84,9 @@
     </div>
 </template>
 <script>
-    import { requestWXIndex, requestRecharge, fetchRecharge } from '@/api'
-    import { WeiXinLogin, getQueryString } from '@/utils/tool'
-    import { Indicator, Toast } from 'mint-ui'
+    import { requestWXIndex, requestRecharge, fetchRecharge,requestIsHasPayPwd } from '@/api'
+    import { WeiXinLogin } from '@/utils/tool'
+    import { Indicator, Toast, MessageBox } from 'mint-ui'
     import wx from 'weixin-js-sdk'
     import {
         setToken,
@@ -101,143 +104,152 @@
         data() {
             return {
                 data: '',
+                rechargeRestrictMax: false,
                 loading: true,
                 selectedIndex: 0,
-                rechargeConfig: 1
+                rechargeConfigId: 1
             }
         },
         created() {
-            if (WeiXinLogin() && !getToken()) {
-                const openid = WeiXinLogin()
-                this.$router.push({name: 'Login', params: {openid: openid}})
-            } else {
-                if (getToken()) {
-                    this.fetchMyIndex()
-                }
-            }
+            
         },
         filters: {
             selectDocument(arr) {
                 if(arr) {
                      return arr[0].documentContent
                 }
-                // console.log(arr)
             }
         },
         mounted() {
-            this.wxConfig()
-            // this.fetchMyIndex()
+            const openid = WeiXinLogin()
+            if (openid) {
+                if (!getToken()) {
+                    setTimeout(() => {
+                        this.$router.push({name: 'Login'})
+                    }, 1200)
+                }
+            } else {
+                if (!getToken()) {
+                    setTimeout(() => {
+                        this.$router.push({name: 'Login'})
+                    }, 1200)
+                } else {
+                    this.fetchMyIndex()
+                }
+            }
         },
         methods: {
-            wxConfig(option) {
-                let setting = {
-                    debug:false,
-                    jsApiList: ['chooseWXPay', 'getBrandWCPayRequest']
-                }
-                const config = {
-                    ...setting,
-                    ...option
-                }
-                wx.ready(()=>{
-                  console.log('wx.ready');
-                });
-            },
             handleSelectAmount(index, rechargeConfigId) {
-                this.selectedIndex = index
-                this.rechargeConfig = rechargeConfigId
-                console.log(this.rechargeConfig)
+                if (index > 2) {
+                    Toast('只针对KA商家开放')
+                    return;
+                } else {
+                    this.selectedIndex = index
+                    this.rechargeConfigId = rechargeConfigId
+                }
             },
             handleTransfer() {
-                Indicator.open()
                 const condition = {
-                    // openid: getOpenId(),
                     openId: getOpenId(),
-                    rechargeConfigId: this.rechargeConfig
+                    rechargeConfigId: this.rechargeConfigId
                 }
-                requestRecharge(condition).then(res => {
-                    // console.log(res.data.prepay_id)
-                    if (res.code == requestCode) {
-                        Toast({
-                          message: '下单成功',
-                          duration: 2000
-                        })
-                        Indicator.close();
-                        const { data } = res
-                        const config = {
-                            appId: data.appId,
-                            timeStamp: data.timeStamp, 
-                            nonceStr: data.nonceStr, 
-                            package:  'prepay_id=' + data.prepay_id, 
-                            signType: data.signType, 
-                            paySign: data.paySign, 
+                if (this.rechargeRestrictMax) {
+                    const message = '活动期间，每天每位用户仅可进行一笔金额转入哦，您今日已经成功进行金额转入，明日可重复转入一次。'
+                    MessageBox({
+                        title: null,
+                        message: message
+                    })
+                    return;
+                } else {
+                    const message = '活动期间，每天每位用户仅可进行一笔金额转入哦，您今日未进行转入操作，请选择需要转入的金额。'
+                    MessageBox.alert(message, null).then(action => {
+                        Indicator.open()
+                        const condition = {
+                            openId: getOpenId(),
+                            rechargeConfigId: this.rechargeConfigId
                         }
-                        this.onBridgeReady(config)
-                        // wx.chooseWXPay({
-                        //     ...config,
-                        //     // appId: data.appId,
-                        //     // timestamp: data.timeStamp, // 支付签名时间戳，注意微信jssdk中的所有使用timestamp字段均为小写。但最新版的支付后台生成签名使用的timeStamp字段名需大写其中的S字符
-                        //     // nonceStr: data.nonceStr, // 支付签名随机串，不长于 32 位
-                        //     // package:  'prepay_id=' + data.prepay_id, // 统一支付接口返回的prepay_id参数值，提交格式如：prepay_id=\*\*\*）
-                        //     // signType: data.signType, // 签名方式，默认为'SHA1'，使用新版支付需传入'MD5'
-                        //     // paySign: data.paySign, // 支付签名
-                        //     success: function (res) {
-                        //         alert(res)
-                        //     // 支付成功后的回调函数
-                        //     },
-                        //     fail: function(e) {
-                        //         alert(e)
-                        //         console.log(e)
-                        //     }
-                        // });
-                    } else {
-                        Toast({
-                          message: '下单失败',
-                          duration: 2000
+                        requestRecharge(condition).then(res => {
+                            if (res.code == requestCode) {
+                                Toast({
+                                  message: '下单成功',
+                                  duration: 1000
+                                })
+                                Indicator.close();
+                                const { data } = res
+                                const config = {
+                                    appId: data.appId,
+                                    timeStamp: data.timeStamp, 
+                                    nonceStr: data.nonceStr, 
+                                    package:  'prepay_id=' + data.prepay_id, 
+                                    signType: data.signType, 
+                                    paySign: data.paySign, 
+                                }
+                                this.onBridgeReady(config)
+                            } else {
+                                Toast({
+                                  message: res.msg,
+                                  duration: 1000
+                                })
+                                Indicator.close();
+                            }
                         })
-                        Indicator.close();
-                    }
-                })
-                // console.log(this.rechargeConfig)
+                    })
+                }
+                
             },
             onBridgeReady(config) {
-                const self = this
                 WeixinJSBridge.invoke(
                 'getBrandWCPayRequest', config,
                 function(res) {
-                    // console.log(res)
                     if (res.err_msg == "get_brand_wcpay_request:ok") {
-                        alert('ok')
                         Toast({
                           message: '支付成功',
-                          duration: 2000
+                          duration: 1000
                         })
-                        const state = {
-                            status: 'success',
-                            merchant: '链动支付',
-                            amount: '100'
-                        }
+                        // 自动重载刷新页面，以便实现菜单实时刷新数据，无需在修改后再手动刷新
                         setTimeout(() => {
-                            self.$router.push({name: 'Result', params: {state: state}})
-                        }, 1500)
-                    } else {
-                        alert('fail')
+                          location.reload()
+                        }, 1000)
+                    } else if (res.err_msg == "get_brand_wcpay_request:cancel") {
                         Toast({
-                          message: '支付失败',
-                          duration: 2000
+                          message: '已取消支付',
+                          duration: 1000
                         })
-                        const state = {
-                            status: 'fail',
-                        }
-                        setTimeout(() => {
-                            self.$router.push({name: 'Result', params: {state: state}})
-                        }, 1500)
-                        // alert(res.err_msg)
+                    } else if (res.err_msg == "get_brand_wcpay_request:fail") {
+                        Toast({
+                          message: '支付失败,请重试',
+                          duration: 1000
+                        })
+                    } else {
+                        Toast({
+                          message: '支付失败!',
+                          duration: 1000
+                        })
                     }
                 }
             );
             },
             handleShowQRCode() {
-                this.$router.push({name: 'Pay', params: {id: 1234}})
+                 requestIsHasPayPwd().then(res => {//判断是否已设置支付密码
+                    if (res.code == requestCode) {
+                        const { balance } = this.data
+                        this.$router.push({name: 'Pay', params: {balance: balance}})
+                    } else {
+                        MessageBox({
+                            showConfirmButton:true,
+                            showCancelButton:true,
+                            title:'温情提示',
+                            message:'您首次使用链鱼付款，请设置支付密码后进行支付',
+                            confirmButtonText:'设置密码',
+                            cancelButtonText:'取消'
+                        }).then(action => {
+                                if(action == "confirm"){
+                                    const { mobile } = this.data
+                                    this.$router.push({name: 'User', params: {mobile: mobile}})
+                                }
+                            });
+                    }
+                })
             },
             handleShowAccount() {
                 const { mobile } = this.data
@@ -250,18 +262,48 @@
                     if (res.code == requestCode) {
                         const { data } = res
                         this.data = data
-                        if (endTime - startTime >= 1000) {
+                        this.rechargeRestrictMax = data.rechargeRestrictMax
+                        if (endTime - startTime >= 300) {
                             this.loading = false
                         } else {
                             setTimeout(() => {
                                 this.loading = false
-                            }, 1000)
+                            }, 600)
                         }
                     } else if (res.code == '1001') {
-                        const openid = WeiXinLogin()
-                        this.$router.push({name: 'Login', params: {openid: openid}})
+                        setTimeout(() => {
+                            const openid = WeiXinLogin()
+                            this.$router.push({name: 'Login'})
+                        }, 1000)
+                    } else {
+                        Toast(res.msg)
+                        setTimeout(() => {
+                            const openid = WeiXinLogin()
+                            this.$router.push({name: 'Login'})
+                        }, 1000)
                     }
                 })
+            },
+            toFavouredPolicy(){
+                this.$router.push({name: 'Favoured'})
+            },
+            toAppStore(){
+                //eg:::====================> 申请应用宝连接 http://wiki.open.qq.com/wiki/%E5%88%9B%E5%BB%BA%E6%96%B0%E5%BA%94%E7%94%A8
+                window.location.href = "http://a.app.qq.com/o/simple.jsp?pkgname=com.linkpulse.joyxuan";
+                //window.location.href = "http://www.joyxuan.com/portal/view/download.html";
+            },
+            showTransRulePopup() {
+                const text = `
+                <div>您的余额还可以<span class="trong-span">1:1</span>直接在享选商城</div>
+                <div>购物哦</div>
+                <div>1000+非遗匠心手艺人作品</div>
+                <div>顶尖原创师设计品牌直供</div>
+                <div>顶级制造源头工厂价直供</div>
+                `
+                MessageBox({
+                  title: null,
+                  message: text
+                });
             }
         }
     }
@@ -270,16 +312,20 @@
 
     .home-container {
         width: 100%;
-        height: 100%;
+        min-height: 100%;
+        height: auto;
         position: relative;
         display: flex;
         flex-direction: column
     }
-    .banner-top {
+    .trong-span {
+        font-size: 32px;
+        font-weight: bold;
+        color:rgba(255,212,127,1);
+    }
+    .banner-header {
         width: 100%;
         height: 380px;
-        // background: url(../../assets/images/bg01@2x.png) center center no-repeat;
-        // background-size: 100% 100%;
         img {
             width: 100%;
             height: 100%;
@@ -335,6 +381,16 @@
                         color:rgba(52,52,52,1);
                     }
                 }
+                .arrow {
+                    flex-grow: 2;
+                    display: flex;
+                    justify-content: flex-end;
+                    align-items: center;
+                    img {
+                        width: 21px;
+                        height: 40px;
+                    }
+                }
             }
             .qrcode-info {
                 width:168px;
@@ -366,11 +422,17 @@
             background-color:rgba(255,255,255,1);
             .adv {
                 width:100%;
-                height:30px; 
-                line-height:30px; 
+                height:40px; 
+                line-height:40px; 
                 font-size:30px;
                 font-family:PingFangSC-Medium;
                 color:#343434;
+                img{
+                    height:33px;
+                    width: 33px;
+                    vertical-align: sub;
+                    margin-left: 10px;
+                }
 
             }
             .amount-list {
@@ -385,13 +447,19 @@
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
+                opacity: 0.5;
                 background: url(../../assets/images/quan_bg@2x.png) center center no-repeat;
                 background-size: 100% 100%;
-                &:not(:nth-child(3n)) { // 3 6 9 除最右侧边缘设置编剧
+                &:not(:nth-child(3n)) { // 3 6 9 除最右侧边缘设置边距
                     margin-right: 43px;
                 }
                 &.active {
+                    opacity: 1;
                     background: url(../../assets/images/quan_bg_select@2x.png) center center no-repeat;
+                    background-size: 100% 100%;
+                }
+                &.disabled {
+                    background: url(../../assets/images/quan_bg_disabled@2x.png) center center no-repeat;
                     background-size: 100% 100%;
                 }
             }
@@ -404,6 +472,11 @@
                 font-size:24px;
                 font-family:PingFangSC-Regular;
                 color:rgba(153,153,153,1);
+            }
+            .disabled {
+                .amount-value {
+                    color: #CCCCCC;
+                }
             }
         }
     }

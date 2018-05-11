@@ -5,12 +5,12 @@
         <section class="banner-top">
             <div class="conversation-box">
                 <div class="conversation clearfix dialog-left dialog-1">
-                    <img src="../../assets/images/tx_icon3@2x.png">
+                    <img src="../../assets/images/tx01@2x.png">
                     <p class="txt">链鱼支付真的有优惠吗？</p>
                 </div>
                 <div class="conversation clearfix dialog-right dialog-2">
                     <p class="txt">能啊，我用了半年了，次次有优惠。</p>
-                    <img src="../../assets/images/tx_icon3@2x.png">
+                    <img src="../../assets/images/tx02@2x.png">
                 </div>
             </div>
             <div class="banner-box">
@@ -59,7 +59,7 @@
                         <p class="txt">链鱼多余的资产只能在这里使用吗？</p>
                     </div>
                     <div class="conversation clearfix dialog-right dialog-4">
-                        <img src="../../assets/images/tx_icon3@2x.png" />
+                        <img src="../../assets/images/tx_icon4@2x.png" />
                         <p class="txt">不不不，你还可以去享选商城使用哦。</p>
                     </div>
                 </div>
@@ -74,7 +74,11 @@
     import { mapActions } from 'vuex'
     import { requestLogin, requestSmsCode } from '@/api'
     import {
-        setOpenId
+        setOpenId,
+        setToken,
+        getToken,
+        getOpenId,
+        removeToken
     } from '@/utils/auth'
     import { RegUtils } from '@/utils/regexp'
     import { Toast, Indicator } from 'mint-ui'
@@ -100,11 +104,12 @@
         created() {
             setTimeout(() => {
                 this.loading = false
-            }, 3000)
+            }, 1000)
         },
         watch: { // 监控以实现实时验证
             mobile: function(newMobile, oldMobile) {
                 if (!RegUtils.isPhone(newMobile)) {
+                    this.smsCode = false
                     this.checkMobile = false
                 } else {
                     this.checkMobile = true
@@ -152,13 +157,13 @@
                     if (res.code == requestCode) {
                         Toast({
                           message: '获取成功',
-                          duration: 2000
+                          duration: 1000
                         })
                         this.countDown(60)
                     } else {
                         Toast({
-                          message: '获取失败',
-                          duration: 2000
+                          message: res.code,
+                          duration: 1000
                         })
                         this.smsCode = true
                     }
@@ -183,49 +188,88 @@
                     mobile,
                     loginSource : 'qr',
                     verifyCode,
-                    openid: this.$route.params.openid
+                    openid: getOpenId()
                 }
                 Indicator.open({
                     text: '正在登录...',
                     spinnerType: 'fading-circle'
                 })
-                // 使用vuex进行异步登录
-                this.LoginAction(condition).then(res => {
-                    console.log(res)
-                    if (res.code == requestCode) {
-                        setOpenId(this.$route.params.openid)
-                        setTimeout(() => {
-                            Indicator.close()
-                        }, 600)
-                        setTimeout(() => {
-                            Toast({
-                              message: '登录成功',
-                              duration: 1000
+                const startTime = Date.now()
+                requestLogin(condition).then(res => {
+                    const endTime = Date.now() // 请求结束
+                    const requestTime = endTime - startTime
+                    if (res.code == '0000') {
+                        if (requestTime <= 300) {
+                            setTimeout(() => {
+                              Indicator.close()
+                              Toast({
+                                message: res.msg,
+                                duration: 1000
+                              })
+                            }, 300 - requestTime)
+                          } else {
+                              Indicator.close()
+                              Toast({
+                                message: res.msg,
+                                duration: 1000
                             })
-                        }, 800)
-                        // 3s 后可在此提交
+                          }
+                        const { token } = res.data
+                        this.LoginAction(token)
+                         // 3s 后可在此提交
                         setTimeout(() => {
                             this.checkValidate = true
                         }, 3000)
                         setTimeout(() => {
                             this.$router.push({name: 'Home'})
-                        }, 1500)
+                        }, 1200)
                     } else {
                         setTimeout(() => {
                             Indicator.close()
-                        }, 1000)
-                        setTimeout(() => {
-                            Toast({
-                              message: '登录失败',
-                              duration: 1000
-                            })
-                        }, 1200)
+                        }, 600)
+                        Toast(res.msg)
                         // 3s 后可在此提交
                         setTimeout(() => {
                             this.checkValidate = true
                         }, 3000)
                     }
                 })
+                // 使用vuex进行异步登录
+                // this.LoginAction(condition).then(res => {
+                //     if (res.code == requestCode) {
+                //         setOpenId(this.$route.params.openid)
+                //         setTimeout(() => {
+                //             Indicator.close()
+                //         }, 600)
+                //         setTimeout(() => {
+                //             Toast({
+                //               message: '登录成功',
+                //               duration: 1000
+                //             })
+                //         }, 800)
+                //         // 3s 后可在此提交
+                //         setTimeout(() => {
+                //             this.checkValidate = true
+                //         }, 3000)
+                //         setTimeout(() => {
+                //             this.$router.push({name: 'Home'})
+                //         }, 1500)
+                //     } else {
+                //         setTimeout(() => {
+                //             Indicator.close()
+                //         }, 1000)
+                //         setTimeout(() => {
+                //             Toast({
+                //               message: '登录失败',
+                //               duration: 1000
+                //             })
+                //         }, 1200)
+                        // // 3s 后可在此提交
+                        // setTimeout(() => {
+                        //     this.checkValidate = true
+                        // }, 3000)
+                //     }
+                // })
             }
         }
     }
@@ -241,8 +285,6 @@
     .banner-top {
         width: 100%;
         height: 380px;
-        // background: url(../../assets/images/bg01@2x.png) center center no-repeat;
-        // background-size: 100% 100%;
         position: relative;
         z-index: 0;
         .conversation-box {
@@ -389,8 +431,6 @@
         height: 390px;
         margin: 0 auto;
         margin-top: 40px;
-        // background: url(../../assets/images/bg01@2x.png) center center no-repeat;
-        // background-size: 100% 100%;
         position: relative;
         .conversation-box {
             position: absolute;
@@ -408,7 +448,6 @@
         }
     }
     .conversation {
-        // border-radius: 32px;
         background-color: #FFFFFF;
         position: relative;
         text-align: center;

@@ -6,25 +6,25 @@ import Order from '@/views/Order'
 import Login from '@/views/Login'
 import User from '@/views/User'
 import Result from '@/views/Result'
-
+import Favoured from '@/views/Favoured'
 Vue.use(Router)
 
 export default new Router({
-    mode: 'history',
+    mode: 'hash',
     routes: [{
         path: '/',
         name: 'Home',
         component: Home
     }, {
-        path: '/login/:openid',
+        path: '/login',
         name: 'Login',
         component: Login
     }, {
-        path: '/pay/:id',
+        path: '/pay/:balance',
         name: 'Pay',
         component: Pay
     }, {
-        path: '/order/:id',
+        path: '/order',
         name: 'Order',
         component: Order
     }, {
@@ -35,5 +35,10 @@ export default new Router({
         path: '/result/:state',
         name: 'Result',
         component: Result
+    },{
+        path: '/favoured',
+        name: 'Favoured',
+        component: Favoured
+        
     }]
 })

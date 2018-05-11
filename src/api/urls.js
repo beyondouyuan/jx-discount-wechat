@@ -15,7 +15,10 @@ const urls = {
     'wxlogin': '/login/phone/wx', // 用户公众号登录
     'wxsendSmsCode': '/login/sendVerifyCode', // 发送验证码
     'wxsetPayPassword': '/qr/wx/setPayPassword', // 设置支付密码
-    'wechatAppLogin': '/wx/wechatAppLogin' // 微信登录授权
+    'wechatAppLogin': '/wx/wechatAppLogin', // 微信登录授权
+    'checkIsHasPayPwd': '/qr/wx/checkIsHasPayPwd', //查询是否设置支付密码
+    'authorizeUrl': '/qr/wx/getWechatAuthorizeUrl',
+    'openid': '/qr/wx/getWechatOpenId'
 }
 const parseAPI = api => {
     return `${urls[api]}`

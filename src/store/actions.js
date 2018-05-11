@@ -2,7 +2,7 @@
 * @Author: beyondouyuan
 * @Date:   2018-03-18 01:47:48
 * @Last Modified by:   beyondouyuan
-* @Last Modified time: 2018-05-03 20:09:45
+* @Last Modified time: 2018-05-09 10:10:00
 * actions.js 即对数据进行各种操作，即通过commit给mutaions实现
 */
 
@@ -19,23 +19,24 @@ import { requestLogin } from '@/api'
  * @param      {<type>}    accountData  The account data
  * @return     {Promise}   { description_of_the_return_value }
  */
-export const LoginAction = ({commit}, accountData) => {
-    return new Promise((resolve, reject) => {
-        requestLogin(accountData).then(res => {
-            console.log(res)
-            const { token } = res.data
-            commit(types.SET_TOKEN, token)
-            setToken(token)
-            resolve(res)
-        }).catch(e => {
-            console.log(e)
-            resolve(e)
-        })
-    })
-}
+// export const LoginAction = ({commit}, accountData) => {
+//     return new Promise((resolve, reject) => {
+//         requestLogin(accountData).then(res => {
+//             if (res.code == '0000') {
+//                 const { token } = res.data
+//                 commit(types.SET_TOKEN, token)
+//                 setToken(token)
+//             }
+//             resolve(res)
+//         }).catch(e => {
+//             console.log(e)
+//             resolve(e)
+//         })
+//     })
+// }
 
 
-
-export const WeiXinLoginAction = ({commit}, data) => {
-    
+export const LoginAction = ({commit}, token) => {
+    commit(types.SET_TOKEN, token)
+    setToken(token)
 }

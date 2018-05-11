@@ -2,9 +2,10 @@
 * @Author: beyondouyuan
 * @Date:   2018-04-26 12:50:07
 * @Last Modified by:   beyondouyuan
-* @Last Modified time: 2018-05-04 09:45:56
+* @Last Modified time: 2018-05-07 21:02:08
 */
 import qs from 'qs'
+import jsonp from 'jsonp'
 import request from '@/utils/request'
 import parseAPI from './urls'
 import '@/mock'
@@ -17,7 +18,7 @@ import '@/mock'
  */
 export const requestCodeMsg = () => {
     return request({
-            url: `http://test.qr.joyxuan.com${parseAPI('codemsg')}`,
+            url: parseAPI('codemsg'),
             method: 'get'
         })
         .then(res => res.data)
@@ -31,7 +32,7 @@ export const requestCodeMsg = () => {
  */
 export const requestPaymentCode = params => {
     return request({
-            url: `http://test.qr.joyxuan.com${parseAPI('paymentCode')}/${params.paymentCode}`,
+            url: `${parseAPI('paymentCode')}/${params.paymentCode}`,
             method: 'get'
         })
         .then(res => res.data)
@@ -45,11 +46,11 @@ export const requestPaymentCode = params => {
  */
 export const requestCpay = data => {
     return request({
-            url: `http://test.qr.joyxuan.com${parseAPI('cpay')}`,
+            url: parseAPI('cpay'),
             method: 'post',
             data: qs.stringify({
                 ...data
-            })
+            }) // 使用qs.stringify传输form data格式 ，否则为json对象格式
         })
         .then(res => res.data)
 }
@@ -62,9 +63,11 @@ export const requestCpay = data => {
  */
 export const requestRecharge = data => {
     return request({
-            url: `http://test.qr.joyxuan.com${parseAPI('recharge')}`,
+            url: parseAPI('recharge'),
             method: 'post',
-            data
+            data: qs.stringify({
+                ...data
+            })
         })
         .then(res => res.data)
 }
@@ -123,7 +126,7 @@ export const requestWXIndex = params => {
  */
 export const requestLogin = params => {
     return request({
-            url: `http://test.qr.joyxuan.com${parseAPI('wxlogin')}`,
+            url: parseAPI('wxlogin'),
             method: 'get',
             params
         })
@@ -138,7 +141,7 @@ export const requestLogin = params => {
  */
 export const requestSmsCode = params => {
     return request({
-            url: `http://test.qr.joyxuan.com${parseAPI('wxsendSmsCode')}`,
+            url: parseAPI('wxsendSmsCode'),
             method: 'get',
             params
         })
@@ -155,7 +158,7 @@ export const requestSetPayPassword = data => {
     return request({
             url: parseAPI('wxsetPayPassword'),
             method: 'post',
-            data: qs.stringify({
+            data:qs.stringify({
                 ...data
             })
         })
@@ -170,10 +173,76 @@ export const requestSetPayPassword = data => {
  */
 export const requestWechatLogin = params => {
     return request({
-            // url: `http://192.168.1.23:9018${parseAPI('wechatAppLogin')}`,
             url: parseAPI('wechatAppLogin'),
             method: 'get',
-            params: qs.stringify({params})
+            params
         })
         .then(res => res.data)
 }
+
+/**
+ * 授权重定向
+ *
+ * @param      {<type>}  params  The parameters
+ * @return     {<type>}  { description_of_the_return_value }
+ */
+export const requestAuthorizeUrl = params => {
+    return request({
+            url: parseAPI('authorizeUrl'),
+            method: 'get',
+            params
+        })
+        .then(res => res.data)
+}
+
+
+/**
+ * 获取openId
+ *
+ * @param      {<type>}  params  The parameters
+ * @return     {<type>}  { description_of_the_return_value }
+ */
+export const requestOpenid = params => {
+    return request({
+            url: parseAPI('openid'),
+            method: 'get',
+            params
+        })
+        .then(res => res.data)
+}
+
+
+/**
+ * 判断是否设置支付密码
+ * @Author   larrylee
+ * @DateTime 2018-05-07T16:59:20+0800
+ * @param    {[type]}                 params [description]
+ * @return   {[type]}                        [description]
+ */
+export const requestIsHasPayPwd = params =>{
+    return request({
+            url: parseAPI('checkIsHasPayPwd'),
+            method: 'get',
+            params
+        })
+        .then(res => res.data)
+}
+
+
+
+/* 键盘侠 你行你上啊 
+    ┌───┐   ┌───┬───┬───┬───┐ ┌───┬───┬───┬───┐ ┌───┬───┬───┬───┐ ┌───┬───┬───┐ 
+    │Esc│   │ F1│ F2│ F3│ F4│ │ F5│ F6│ F7│ F8│ │ F9│F10│F11│F12│ │P/S│S L│P/B│  ┌┐    ┌┐    ┌┐ 
+    └───┘   └───┴───┴───┴───┘ └───┴───┴───┴───┘ └───┴───┴───┴───┘ └───┴───┴───┘  └┘    └┘    └┘ 
+    ┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───────┐ ┌───┬───┬───┐ ┌───┬───┬───┬───┐ 
+    │~ `│! 1│@ 2│# 3│$ 4│% 5│^ 6│& 7│* 8│( 9│) 0│_ -│+ =│ BacSp │ │Ins│Hom│PUp│ │N L│ / │ * │ - │ 
+    ├───┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─────┤ ├───┼───┼───┤ ├───┼───┼───┼───┤ 
+    │ Tab │ Q │ W │ E │ R │ T │ Y │ U │ I │ O │ P │{ [│} ]│ | \ │ │Del│End│PDn│ │ 7 │ 8 │ 9 │   │ 
+    ├─────┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴┬──┴─────┤ └───┴───┴───┘ ├───┼───┼───┤ + │ 
+    │ Caps │ A │ S │ D │ F │ G │ H │ J │ K │ L │: ;│" '│ Enter  │               │ 4 │ 5 │ 6 │   │ 
+    ├──────┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴─┬─┴────────┤     ┌───┐     ├───┼───┼───┼───┤ 
+    │ Shift  │ Z │ X │ C │ V │ B │ N │ M │< ,│> .│? /│  Shift   │     │ ↑ │     │ 1 │ 2 │ 3 │   │ 
+    ├─────┬──┴─┬─┴──┬┴───┴───┴───┴───┴───┴──┬┴───┼───┴┬────┬────┤ ┌───┼───┼───┐ ├───┴───┼───┤ E││ 
+    │ Ctrl│    │Alt │         Space         │ Alt│    │    │Ctrl│ │ ← │ ↓ │ → │ │   0   │ . │←─┘│ 
+    └─────┴────┴────┴───────────────────────┴────┴────┴────┴────┘ └───┴───┴───┘ └───────┴───┴───┘ 
+*/  

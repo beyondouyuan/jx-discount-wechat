@@ -14,7 +14,7 @@ import './assets/style/index.scss'
 
 import store from '@/store'
 import * as filters from './filters' // 全局filter
-import './permission'  // 路由拦截
+// import './permission'  // 路由拦截
 
 
 Object.keys(filters).forEach(key => {

@@ -2,7 +2,37 @@
 * @Author: beyondouyuan
 * @Date:   2018-04-26 16:17:40
 * @Last Modified by:   beyondouyuan
-* @Last Modified time: 2018-04-26 16:19:25
+* @Last Modified time: 2018-05-09 10:41:59
 */
+
 @charset "utf-8";
 @import './reset.scss';
+
+.mint-toast-text,
+.mint-indicator-text {
+  font-size: 36px !important;
+}
+.mint-msgbox-content {
+    padding-top: 25px !important;
+    padding-bottom: 50px !important;
+  }
+.mint-msgbox {
+    width: 70% !important;
+    font-size: 28px !important;
+}
+.mint-msgbox-btns {
+    box-sizing: content-box;
+    padding-top: 16px !important;
+    padding-bottom: 16px !important;
+    font-size: 28px !important
+}
+.mint-msgbox-message {
+    > div {
+        height: 48px !important;
+        line-height: 48px !important;
+    }
+}
+
+.mint-msgbox-header {
+    padding-top: 25px !important
+}
